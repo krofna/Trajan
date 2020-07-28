@@ -13,7 +13,7 @@
 #include <iostream>
 #include <fstream>
 
-LP::LP(Graph& t1, Graph& t2) : t1(t1), t2(t2), c(t1.GetNumNodes() * t2.GetNumNodes()), nr_rows(0), nr_cols(0)
+LP::LP(Graph& t1, Graph& t2, vector<vd>& matrix) : t1(t1), t2(t2), matrix(matrix), c(t1.GetNumNodes() * t2.GetNumNodes()), nr_rows(0), nr_cols(0)
 {
     K.resize(t1.GetNumNodes(), vi(t2.GetNumNodes(), -1));
     MatchingConstraints();
@@ -41,7 +41,7 @@ void LP::MatchingConstraints()
     {
         for (int j : t2.nodes())
         {
-            double w; // from matrix
+            double w = matrix[i][j];
             if (w != 0)
             {
                 int col = i * m + j - cnt;

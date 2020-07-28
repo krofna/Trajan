@@ -20,7 +20,7 @@
 class LP
 {
 public:
-    LP(Graph& t1, Graph& t2);
+    LP(Graph& t1, Graph& t2, vector<vd>& matrix);
     virtual ~LP();
 
     virtual void Solve(string filename);
@@ -46,6 +46,7 @@ protected:
 
     bool dag;
     Graph &t1, &t2;
+    vector<vd> matrix;
 };
 
 template<class T>

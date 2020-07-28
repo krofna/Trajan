@@ -12,7 +12,7 @@
 #include "Timer.h"
 #include <iostream>
 
-LPInt::LPInt(Graph& t1, Graph& t2) : LP(t1, t2)
+LPInt::LPInt(Graph& t1, Graph& t2, vector<vd>& matrix) : LP(t1, t2, matrix)
 {
 }
 

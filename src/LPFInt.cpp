@@ -10,7 +10,7 @@
 */
 #include "LPFInt.h"
 
-LPFInt::LPFInt(Graph& t1, Graph& t2) : LPInt(t1, t2)
+LPFInt::LPFInt(Graph& t1, Graph& t2, vector<vd>& matrix) : LPInt(t1, t2, matrix)
 {
 }
 

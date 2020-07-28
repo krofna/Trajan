@@ -16,7 +16,7 @@
 class LPFInt : public LPInt
 {
 public:
-    LPFInt(Graph& t1, Graph& t2);
+    LPFInt(Graph& t1, Graph& t2, vector<vd>& matrix);
 
     virtual void Solve(string filename) override;
 };

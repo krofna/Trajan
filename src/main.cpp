@@ -15,14 +15,14 @@
 #include "LPFInt.h"
 #include "read_csv.h"
 
-LP* MakeSolver(Graph& t1, Graph& t2, int s)
+LP* MakeSolver(Graph& t1, Graph& t2, vector<vd>& matrix, int s)
 {
     if (s == 0)
-        return new LP(t1, t2);
+        return new LP(t1, t2, matrix);
     else if (s == 2)
-        return new LPInt(t1, t2);
+        return new LPInt(t1, t2, matrix);
     else if (s == 3)
-        return new LPFInt(t1, t2);
+        return new LPFInt(t1, t2, matrix);
     return nullptr;
 }
 
@@ -42,10 +42,19 @@ int main(int argc, char** argv)
     Timer T;
     T.start();
 
+    // read dags
     auto [t1, t2] = MakeGraphs(argv);
-    vector<vector<double>> cost_matrix = CSVReader(argv[5]).getDoubleData();
-    LP* solver = MakeSolver(*t1, *t2, stoi(argv[7]));
+    // read (minimization) weights
+    vector<vd> minmatrix = CSVReader(argv[5]).getDoubleData();
+    // convert into maximization problem
+    vector<vd> maxmatrix(t1->GetNumNodes(), vd(t2->GetNumNodes()));
+    for (int i = 0; i < t1->GetNumNodes(); ++i)
+        for (int j = 0; j < t2->GetNumNodes(); ++j)
+            maxmatrix[i][j] = minmatrix[i][t2->GetNumNodes()] + minmatrix[t1->GetNumNodes()][j] - minmatrix[i][j];
+
+    LP* solver = MakeSolver(*t1, *t2, maxmatrix, stoi(argv[7]));
     if (solver) solver->Solve(argv[6]);
+
     T.stop();
     clog << "TIME: " << T.secs() << " secs" << endl;
 

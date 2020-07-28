@@ -18,7 +18,7 @@ typedef tuple<int, int> ii;
 class LPInt : public LP
 {
 public:
-    LPInt(Graph& t1, Graph& t2);
+    LPInt(Graph& t1, Graph& t2, vector<vd>& matrix);
 
     virtual void Solve(string filename) override;
 private:
