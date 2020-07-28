@@ -1,12 +1,13 @@
 # dagmatch #
 
-### Alignment of complex trajectories from single-cell RNAseq experiments. ###
+### Compute optimal dag matching ###
 
 ## Compiling dagmatch ##
 
-To build dagmatch, simply run
+In order to build dagmatch, you need to have Eigen3 library installed. To build dagmatch, simply run
 
 ```
+cmake .
 make
 ```
 
@@ -15,7 +16,15 @@ make
 ### Usage ###
 
 ```
-trajan <tree_1> <map_1> <tree_2> <map_2> <distance_matrix> <align> <solver>
+dagmatch_lp <tree_1> <map_1> <tree_2> <map_2> <distance_matrix> <align> <solver>
+```
+
+```
+dagmatch_fpt <tree_1> <map_1> <tree_2> <map_2> <distance_matrix>
+```
+
+```
+dagmatch_greedy <tree_1> <map_1> <tree_2> <map_2> <distance_matrix>
 ```
 
 ### Arguments ###
