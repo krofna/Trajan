@@ -1,9 +1,9 @@
 /*
-    Copyright (C) 2018 Mislav Blažević
+    Copyright (C) 2018-2020 Mislav Blažević
 
-    This file is part of Trajan.
+    This file is part of dagmatch.
 
-    Trajan is free software: you can redistribute it and/or modify
+    dagmatch is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
@@ -18,41 +18,29 @@ using namespace std;
 
 const double EPS = 1e-2;
 
-typedef vector<pair<int, int> > vii;
+typedef vector<pair<int, int>> vii;
 
 class Constraint
 {
 public:
-    Constraint(vector<ET>& Triplets, Graph& t1, Graph& t2, vvi& K, Vector& x, bool swp);
+    Constraint(vector<ET>& Triplets, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp);
 
     virtual int AddTriplets(int nr_rows) = 0;
 protected:
     inline int GetCol(int i, int j) const;
-    inline int GetCol(newick_node* nodel, newick_node* noder) const;
-    inline double GetWeight(newick_node* nodel, newick_node* noder) const;
-    inline double GetWeight(int i, int j) const;
+    inline double GetWeight(int nodel, int noder) const;
     void AddConstraint(int row, vii& P);
 
-    vector<ET>& Triplets;
+    vector<ET> &Triplets;
     Graph &t1, &t2;
-    vvi& K;
-    Vector& x;
+    vector<vi> &K;
+    Vector &x;
     bool swp;
 };
 
 inline int Constraint::GetCol(int i, int j) const
 {
     return swp ? K[j][i] : K[i][j];
-}
-
-inline int Constraint::GetCol(newick_node* nodel, newick_node* noder) const
-{
-    return GetCol(nodel->taxoni, noder->taxoni);
-}
-
-inline double Constraint::GetWeight(newick_node* nodel, newick_node* noder) const
-{
-    return GetWeight(nodel->taxoni, noder->taxoni);
 }
 
 inline double Constraint::GetWeight(int i, int j) const

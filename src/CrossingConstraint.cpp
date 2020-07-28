@@ -1,9 +1,9 @@
 /*
-    Copyright (C) 2018 Mislav Blažević
+    Copyright (C) 2018-2020 Mislav Blažević
 
-    This file is part of Trajan.
+    This file is part of dagmatch.
 
-    Trajan is free software: you can redistribute it and/or modify
+    dagmatch is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
@@ -11,7 +11,7 @@
 #include "CrossingConstraint.h"
 #include <thread>
 
-CrossingConstraint::CrossingConstraint(vector<ET>& Triplets, Graph& t1, Graph& t2, vvi& K, Vector& x, bool swp) : Constraint(Triplets, t1, t2, K, x, swp)
+CrossingConstraint::CrossingConstraint(vector<ET>& Triplets, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp) : Constraint(Triplets, t1, t2, K, x, swp)
 {
     DP.resize(t1.GetNumNodes());
     PA.resize(t1.GetNumNodes());
@@ -27,7 +27,7 @@ CrossingConstraint::CrossingConstraint(vector<ET>& Triplets, Graph& t1, Graph& t
 int CrossingConstraint::AddTriplets(int nr_rows)
 {
     int ncr = 0;
-    for (auto node : t1.L)
+    for (int node : t1.leaves())
     {
         vii P;
         Reconstruct(P, node, t2.GetRoot());
@@ -58,7 +58,7 @@ void CrossingConstraint::CrossingJob(int i)
 {
     while (ax)
     {
-        newick_node* node = nullptr;
+        int node = -1;
         {
             lock_guard<mutex> g(qmutex);
             if (Q.empty())
@@ -73,74 +73,72 @@ void CrossingConstraint::CrossingJob(int i)
         }
         DFSRight(t2.GetRoot(), node);
         lock_guard<mutex> g(qmutex);
-        for (newick_child* child = node->child; child; child = child->next)
-            if (--PA[child->node->taxoni] == 0)
-                Q.push(child->node);
+        for (int child : t1.children(node))
+            if (--PA[child] == 0)
+                Q.push(child);
     }
 }
 
-pair<newick_node*, double> CrossingConstraint::GetMaxPC(newick_node* nodel, newick_child* noder, bool s)
+pair<int, double> CrossingConstraint::GetMaxPC(int nodel, const vi& noder, bool s)
 {
     double mx = 0;
-    newick_node* mc = nullptr;
-    for (newick_child* pc = noder; pc; pc = pc->next)
+    int mc = -1;
+    for (int pc : noder)
     {
-        double cw = GetDP(nodel, pc->node, s);
+        double cw = GetDP(nodel, pc, s);
         if (cw >= mx)
         {
             mx = cw;
-            mc = pc->node;
+            mc = pc;
         }
     }
-    return make_pair(mc, mx);
+    return {mc, mx};
 }
 
-inline double& CrossingConstraint::GetDP(newick_node* nodel, newick_node* noder, bool s = false)
+inline double& CrossingConstraint::GetDP(int nodel, int noder, bool s = false)
 {
-    return s ? DP[noder->taxoni][nodel->taxoni] : DP[nodel->taxoni][noder->taxoni];
+    return s ? DP[noder][nodel] : DP[nodel][noder];
 }
 
-inline pair<newick_node*, double> CrossingConstraint::GetMaxChild(newick_node* nodel, newick_node* noder)
+inline pair<int, double> CrossingConstraint::GetMaxChild(int nodel, int noder)
 {
-    return GetMaxPC(nodel, noder->child, false);
+    return GetMaxPC(nodel, t2.children(noder), false);
 }
 
-inline pair<newick_node*, double> CrossingConstraint::GetMaxParent(newick_node* nodel, newick_node* noder)
+inline pair<int, double> CrossingConstraint::GetMaxParent(int nodel, int noder)
 {
-    return GetMaxPC(nodel, noder->parent, true);
+    return GetMaxPC(nodel, t2.parents(noder), true);
 }
 
-void CrossingConstraint::DFSLeft(newick_node* node, vb& C)
+void CrossingConstraint::DFSLeft(int node, vb& C)
 {
-    C[node->taxoni] = true;
-    for (newick_child* child = node->child; child; child = child->next)
+    C[node] = true;
+    for (int child : t1.children(node))
     {
-        PA[child->node->taxoni]++;
-        if (!C[child->node->taxoni])
-            DFSLeft(child->node, C);
+        PA[child]++;
+        if (!C[child])
+            DFSLeft(child, C);
     }
 }
 
-double CrossingConstraint::DFSRight(newick_node* node, newick_node* nodel)
+double CrossingConstraint::DFSRight(int node, int nodel)
 {
     double mx = 0;
-    for (newick_child* child = node->child; child; child = child->next)
-        mx = max(mx, DFSRight(child->node, nodel));
+    for (int child : t2.children(node))
+        mx = max(mx, DFSRight(child, nodel));
     mx = max(mx, GetMaxParent(node, nodel).second);
     return GetDP(nodel, node) = mx + GetWeight(nodel, node);
 }
 
-void CrossingConstraint::Reconstruct(vii& P, newick_node* nodel, newick_node* noder)
+void CrossingConstraint::Reconstruct(vii& P, int nodel, int noder)
 {
-    double pw, cw;
-    newick_node *child, *parent;
-    tie(child, cw) = GetMaxChild(nodel, noder);
-    tie(parent, pw) = GetMaxParent(noder, nodel);
-    P.emplace_back(nodel->taxoni, noder->taxoni);
-    if (nodel->parent && (!child || pw > cw))
+    auto [child, cw] = GetMaxChild(nodel, noder);
+    auto [parent, pw] = GetMaxParent(noder, nodel);
+    P.emplace_back(nodel, noder);
+    if (parent != -1 && (child == -1 || pw > cw))
         Reconstruct(P, parent, noder);
-    else if (child && (!parent || cw >= pw))
+    else if (child != -1 && (parent == -1 || cw >= pw))
         Reconstruct(P, nodel, child);
     else
-        assert(!parent && !child);
+        assert(parent == -1 && child == -1);
 }

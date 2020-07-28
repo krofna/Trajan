@@ -1,9 +1,9 @@
 /*
-    Copyright (C) 2018 Mislav Blažević
+    Copyright (C) 2020 Mislav Blažević
 
-    This file is part of Trajan.
+    This file is part of dagmatch.
 
-    Trajan is free software: you can redistribute it and/or modify
+    dagmatch is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
@@ -12,96 +12,82 @@
 #define GRAPH_H
 
 #include <vector>
+#include <string>
 #include <map>
-#include <list>
-#include "newick.h"
 using namespace std;
 
 typedef vector<int> vi;
-typedef vector<vi> vvi;
 typedef vector<double> vd;
-typedef vector<vd> vvd;
-typedef vector<vb> vvb;
+typedef vector<bool> vb;
+
+class AntichainNetwork;
 
 const size_t NR_THREADS = 4;
 
 class Graph
 {
 public:
-    Graph() : _n(0) { }
-    virtual ~Graph() { dealloc_dag(root, _n); };
+    Graph(const char* filename, const char* mapname);
+    ~Graph();
 
-    int GetNumNodes() const { return _n; }
-    newick_node* GetRoot() const { return root; }
-    virtual Graph* Init();
+    int GetNumNodes() const { return n; }
+    int GetRoot() const { return root; }
+    AntichainNetwork* GetNetwork() { return network; }
+    const vi& children(int node) const { return adj[node]; }
+    const vi& parents(int node) const { return radj[node]; }
+    const vi& leaves() const { return L; }
+    const vi& nodes() const { return N; }
+    string label(int node) const { return rm[node]; }
 
-    vn GetNodes()
-    {
-        return get_nodes(root, _n);
-    }
+    vector<vb> D;
 
-    vn L;
-    mnls clade;
-    vvb D;
-protected:
+private:
     void TransitiveClosure();
-    void TransitiveClosure(newick_node* node, newick_node* rnode, vvb& C);
-    void Init(newick_node* node);
-    virtual void Leaf(newick_node* node) { }
-    virtual void Child(newick_node* node, newick_node* child) { }
-    virtual void Relation(int d, int a) { }
-    newick_node* root;
-    long _n;
+    void TransitiveClosure(int node, int rnode, vector<vb>& C);
+    void TransitiveReduction(int node, vb& C);
+    void TransitiveReduction(int parent, int node, vb& C);
+
+    // mapping of node identifiers to nodes
+    map<string, int> m;
+    // mapping of nodes to node identifiers
+    vector<string> rm;
+    // adjacency list of a node
+    vector<vi> adj;
+    // reverse adjacency list of a node
+    vector<vi> radj;
+    // leaves/nodes
+    vi L, N;
+    // root node
+    int root;
+    // number of nodes
+    int n;
+
+    AntichainNetwork* network;
 };
 
-class DAG : public Graph
+class AntichainNetwork
 {
 public:
-    DAG(const char* f1, const char* f2);
-    ~DAG() { }
+    AntichainNetwork(Graph& graph);
 
-protected:
-    virtual void Relation(int d, int a) { }
-};
+    vector<vi> G;
+    vector<vd> R[NR_THREADS];
+    vector<vi> P;
 
-class Tree : public Graph
-{
-public:
-    Tree() { }
-    Tree(const char* f1);
-    Tree(const char* f1, const char* f2);
-    ~Tree() { }
+    void AddEdge(int l, int i);
 
-protected:
-    virtual void Leaf(newick_node* node) override;
-    virtual void Child(newick_node* node, newick_node* child) override;
-    bool t;
-};
+private:
+    void GenPaths(int node, vi& P);
 
-class LDAG : public DAG
-{
-public:
-    LDAG(const char* f1, const char* f2);
-    Graph* Init();
-
-    vvi G;
-    vvd R[NR_THREADS];
-    vector<vn> P;
-protected:
-    void GenPaths(newick_node* node, vn& P);
-    void TransitiveReduction(newick_node* node, vb& C);
-    void TransitiveReduction(newick_node* parent, newick_node* node, vb& C);
-    void Reduce(newick_child** childptr, newick_node* node);
-    void Wipe(newick_node* node);
-    void Renumerate(newick_node* node);
     template<class F>
-    void ForeachPair(vn& Q, F f)
+    void ForeachPair(vi& Q, F f)
     {
         for (int i = 0; i < Q.size(); ++i)
-            for (int j = 1; j < Q.size(); ++j)
-                f(Q, Q[i]->taxoni, Q[j]->taxoni);
+            for (int j = i + 1; j < Q.size(); ++j)
+                f(Q, Q[i], Q[j]);
     }
-    virtual void Relation(int d, int a) override;
+
+    Graph& graph;
 };
 
 #endif

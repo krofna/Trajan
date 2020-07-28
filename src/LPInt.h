@@ -1,9 +1,9 @@
 /*
-    Copyright (C) 2018 Mislav Blažević
+    Copyright (C) 2018-2020 Mislav Blažević
 
-    This file is part of Trajan.
+    This file is part of dagmatch.
 
-    Trajan is free software: you can redistribute it and/or modify
+    dagmatch is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
@@ -18,9 +18,9 @@ typedef tuple<int, int> ii;
 class LPInt : public LP
 {
 public:
-    LPInt(Graph& t1, Graph& t2, string d, double k, bool dag);
+    LPInt(Graph& t1, Graph& t2);
 
-    virtual void Solve(string filename, string outScoreFile = "score.csv") override;
+    virtual void Solve(string filename) override;
 private:
     bool CC(const ii& a, const ii& b) const;
     void AddConstraint(const ii& a, const ii& b);

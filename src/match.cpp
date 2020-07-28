@@ -1,9 +1,9 @@
 /*
-    Copyright (C) 2019 Mislav Blažević
+    Copyright (C) 2019-2020 Mislav Blažević
 
-    This file is part of Trajan.
+    This file is part of dagmatch.
 
-    Trajan is free software: you can redistribute it and/or modify
+    dagmatch is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
@@ -15,19 +15,17 @@
 #include <functional>
 #include <cstring>
 #include <algorithm>
-#include <limits>
 #include <fstream>
 #include <cassert>
 #include <cmath>
 #include "read_csv.h"
+#include "array2d.h"
 #define die() assert(false)
 #define dbg(x) cerr << #x << " = " << x << endl
 using namespace std;
 
 using uint = unsigned;
 using mask = unsigned long long;
-
-const int NINF = numeric_limits<int>::min();
 
 // bitmask operations
 inline mask pc(mask x) { return __builtin_popcountll(x); }
@@ -42,42 +40,6 @@ const int MAXN = 1000;
 // maximum number of leaf/branching nodes in a tree
 const int MAXLB = 64;
 
-// should be faster than vector<vector<int>>
-struct array2d
-{
-    int n, m;
-    vector<int> v;
-
-    array2d() : n(0), m(0)
-    {
-    }
-
-    array2d(int n, int m, int val = NINF) : n(n), m(m)
-    {
-        v.resize(n * m, val);
-    }
-
-    int& operator()(int x, int y)
-    {
-        return v[x * m + y];
-    }
-
-    const int& operator()(int x, int y) const
-    {
-        return v[x * m + y];
-    }
-
-    array2d transpose() const
-    {
-        array2d D(m, n);
-        for (int i = 0; i < n; ++i)
-            for (int j = 0; j < m; ++j)
-                D(j, i) = (*this)(i, j);
-        return D;
-    }
-};
-
-// TODO: replace with gp_hash_table from __gnu_pbds or some other faster hash table
 using ff_state = tuple<int, int, int, vector<int>, vector<int>, vector<int>, vector<int>, vector<int>, array2d, array2d>;
 using dp_table = unordered_map<mask, unordered_map<mask, ff_state>>;
 using path_dp_table = map<tuple<int, int>, pair<array2d, array2d>>;
@@ -240,34 +202,6 @@ struct tree
         branch(r, 0, -1);
     }
 };
-
-// TODO: This special case is UNUSED for now
-int path_tree(array2d& dp, const tree& t1, const tree& t2, const int lx, int x, int y)
-{
-    // trivial case: empty path
-    if (x == lx)
-        return 0;
-
-    // memoization
-    int& sol = dp(x, y);
-    if (sol != NINF)
-        return sol;
-
-    // TODO: select the correct child
-    // x's only child
-    int w = t1.adj[x].front();
-
-    // delete path node
-    sol = max(sol, path_tree(dp, t1, t2, lx, w, y));
-    for (int z : t2.adj[y])
-    {
-        // match x and y
-        sol = max(sol, 1 + path_tree(dp, t1, t2, lx, w, z));
-        // delete tree node
-        sol = max(sol, path_tree(dp, t1, t2, lx, x, z));
-    }
-    return sol;
-}
 
 // lx/ly are parents of roots of paths in t1 and t2 respectively
 int path_path(array2d& dp, array2d& pdp, const array2d& matrix, const tree& t1, const tree& t2, const int lx, const int ly, int x, int y)

@@ -1,8 +1,8 @@
 #ifndef GENO_H
 #define GENO_H
 
-#include "Eigen/Dense"
-#include "Eigen/Sparse"
+#include <Eigen/Dense>
+#include <Eigen/Sparse>
 #include "geno/genoNLP.hpp"
 #include "geno/augmentedLagrangian.hpp"
 #include <limits>

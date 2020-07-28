@@ -1,164 +1,194 @@
 /*
-    Copyright (C) 2018 Mislav Blažević
+    Copyright (C) 2018-2020 Mislav Blažević
 
-    This file is part of Hali.
+    This file is part of dagmatch.
 
-    Hali is free software: you can redistribute it and/or modify
+    dagmatch is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 */
 #include "Graph.h"
-#include "Geno.h"
 #include <algorithm>
+#include <fstream>
+#include <cassert>
+#include <limits>
+#define die() assert(false)
 
-DAG::DAG(const char* f1, const char* f2)
+Graph::Graph(const char* filename, const char* mapname) : network(nullptr)
 {
-    msn M;
-    Init(root = load_dag(f1, f2, clade, M));
+    ifstream file(filename), mapfile(mapname);
+    if (!file || !mapfile)
+        die();
+
+    // map string indices to integers
+    int node_idx; string node_name;
+    while (mapfile >> node_idx >> node_name)
+        m[node_name] = node_idx;
+
+    adj.resize(m.size());
+    radj.resize(m.size());
+    n = adj.size();
+
+    // create reverse mapping
+    rm.resize(n);
+    for (auto [name, idx] : m)
+        rm[idx] = name;
+
+    vector<int> nroot(n), nleaf(n);
+
+    // read from file
+    string sa, sb, type;
+    while (file >> sa >> sb >> type)
+    {
+        if (type != "default")
+            die();
+
+        // directed edge sb->sa
+        int x = m[sa], y = m[sb];
+        adj[y].push_back(x);
+        radj[x].push_back(y);
+        nroot[x] = 1;
+        nleaf[y] = 1;
+    }
+
+    // find root and leaves
+    for (uint i = 0; i < m.size(); ++i)
+    {
+        // found the root
+        if (!nroot[i])
+        {
+            // multiple roots
+            if (root != -1)
+                die();
+
+            root = i;
+        }
+        // found a leaf
+        if (!nleaf[i])
+            L.push_back(i);
+    }
+
+    // there is no root
+    if (root == -1)
+        die();
+
+    vb C(n);
+    TransitiveReduction(root, C);
+    bool is_tree = true;
+    for (uint i = 0; i < m.size(); ++i)
+        if (radj[i].size() > 1)
+            is_tree = false;
+
+    if (!is_tree)
+        network = new AntichainNetwork(*this);
 }
 
-LDAG::LDAG(const char* f1, const char* f2) : DAG(f1, f2)
+Graph::~Graph()
 {
-    size_t SZ = _n * 2 + 2;
+    delete network;
+}
+
+void Graph::TransitiveReduction(int node, vb& C)
+{
+    if (C[node])
+        return;
+
+    C[node] = true;
+    for (int child : children(node))
+    {
+        TransitiveReduction(child, C);
+        for (int cchild : children(child))
+        {
+            vb CC(GetNumNodes());
+            TransitiveReduction(node, cchild, CC);
+        }
+    }
+}
+
+void Graph::TransitiveReduction(int parent, int node, vb& C)
+{
+    C[node] = true;
+    //Reduce(&parent->child, node);
+    //Reduce(&node->parent, parent);
+    for (int child : children(node))
+        if (!C[child])
+            TransitiveReduction(parent, child, C);
+}
+
+AntichainNetwork::AntichainNetwork(Graph& graph) : graph(graph)
+{
+    int n = graph.GetNumNodes();
+    size_t SZ = n * 2 + 2;
     G.resize(SZ);
     for (int j = 0; j < NR_THREADS; ++j)
         R[j].resize(SZ, vd(SZ));
 
     int S = SZ - 2, T = SZ - 1;
-    for (int i = 0; i < _n; ++i)
+    for (int i = 0; i < n; ++i)
     {
         G[S].push_back(i);
         G[i].push_back(S);
-        G[T].push_back(i + _n);
-        G[i + _n].push_back(T);
+        G[T].push_back(i + n);
+        G[i + n].push_back(T);
     }
-}
 
-Graph* Graph::Init()
-{
-    TransitiveClosure();
-    return this;
-}
-
-Graph* LDAG::Init()
-{
-    vn T;
-    vb C(_n);
-    TransitiveReduction(root, C);
-    // Restore dfs ordering of indices
-    Wipe(root);
-    _n = 0;
-    Renumerate(root);
-    GenPaths(root, T);
-    sort(P.begin(), P.end(), [](const vn& a, const vn& b)
+    vi VT;
+    GenPaths(graph.GetRoot(), VT);
+    sort(P.begin(), P.end(), [](const vi& a, const vi& b)
     {
         return a.size() > b.size();
     });
-    vvb D(_n, vb(_n));
-    vector<vn> Q;
+    vector<vb> D(n, vb(n));
+    vector<vi> Q;
     for (int k = 0; k < P.size(); ++k)
     {
-        ForeachPair(P[k], [&](vn& p, int i, int j)
+        ForeachPair(P[k], [&](vi& p, int i, int j)
         {
             if (D[i][j]) return;
             Q.push_back(p);
-            ForeachPair(P[k], [&](vn& p, int i, int j)
+            ForeachPair(P[k], [&](vi& p, int i, int j)
             {
                 D[i][j] = D[j][j] = true;
             });
         });
     }
     P = move(Q);
-    return Graph::Init();
 }
 
-void LDAG::Wipe(newick_node* node)
-{
-    node->taxoni = -1;
-    for (newick_child* child = node->child; child; child = child->next)
-        if (child->node->taxoni != -1)
-            Wipe(child->node);
-}
-
-void LDAG::Renumerate(newick_node* node)
-{
-    node->taxoni = _n++;
-    for (newick_child* child = node->child; child; child = child->next)
-        if (child->node->taxoni == -1)
-            Renumerate(child->node);
-}
-
-void LDAG::TransitiveReduction(newick_node* node, vb& C)
-{
-    if (C[node->taxoni])
-        return;
-
-    C[node->taxoni] = true;
-    for (newick_child* child = node->child; child; child = child->next)
-    {
-        TransitiveReduction(child->node, C);
-        for (newick_child* cchild = child->node->child; cchild; cchild = cchild->next)
-        {
-            vb CC(_n);
-            TransitiveReduction(node, cchild->node, CC);
-        }
-    }
-}
-
-void LDAG::TransitiveReduction(newick_node* parent, newick_node* node, vb& C)
-{
-    C[node->taxoni] = true;
-    Reduce(&parent->child, node);
-    Reduce(&node->parent, parent);
-    for (newick_child* child = node->child; child; child = child->next)
-        if (!C[child->node->taxoni])
-            TransitiveReduction(parent, child->node, C);
-}
-
-void LDAG::Reduce(newick_child** childptr, newick_node* node)
-{
-    while (*childptr)
-    {
-        if ((*childptr)->node == node)
-            *childptr = (*childptr)->next;
-        else childptr = &(*childptr)->next;
-    }
-}
-
-void LDAG::GenPaths(newick_node* node, vn& T)
+void AntichainNetwork::GenPaths(int node, vi& T)
 {
     T.push_back(node);
-    if (!node->child)
+    if (graph.children(node).empty())
         P.push_back(T);
-    for (newick_child* child = node->child; child; child = child->next)
-        GenPaths(child->node, T);
+    for (int child : graph.children(node))
+        GenPaths(child, T);
     T.pop_back();
 }
 
 void Graph::TransitiveClosure()
 {
-    D.resize(_n, vb(_n));
-    vvb C(_n, vb(_n));
-    for (newick_node* leaf : L)
+    D.resize(n, vb(n));
+    vector<vb> C(n, vb(n));
+    for (int leaf : L)
         TransitiveClosure(leaf, leaf, C);
 }
 
-void Graph::TransitiveClosure(newick_node* node, newick_node* rnode, vvb& C)
+void Graph::TransitiveClosure(int node, int rnode, vector<vb>& C)
 {
-    int l = rnode->taxoni;
-    int i = node->taxoni;
+    int l = rnode;
+    int i = node;
     if (l != i)
     {
         D[l][i] = true;
-        Relation(l, i);
+        network->AddEdge(l, i);
     }
 
     C[i][l] = true;
-    for (newick_parent* parent = node->parent; parent; parent = parent->next)
+    for (int parent : parents(node))
     {
-        newick_node* pn = parent->node;
-        int pnt = pn->taxoni;
+        int pn = parent;
+        int pnt = pn;
         if (!C[pnt][l])
             TransitiveClosure(pn, rnode, C);
         if (!C[pnt][pnt])
@@ -166,65 +196,11 @@ void Graph::TransitiveClosure(newick_node* node, newick_node* rnode, vvb& C)
     }
 }
 
-/*
-#include <algorithm>
-
-for (string& j : L[i])
-    if (find(L[r].begin(), L[r].end(), j) == L[r].end())
-        L[r].push_back(j);
-*/
-void Graph::Init(newick_node* node)
+void AntichainNetwork::AddEdge(int l, int i)
 {
-    if (!node->child)
-    {
-        L.push_back(node);
-        Leaf(node);
-    }
-
-    node->taxoni = _n++;
-    for (newick_child* child = node->child; child; child = child->next)
-    {
-        newick_node* cnode = child->node;
-        newick_parent** parentptr = &cnode->parent;
-        if (!cnode->parent)
-            Init(cnode);
-
-        while (*parentptr) parentptr = &(*parentptr)->next;
-        *parentptr = new newick_parent(node);
-        Child(node, child->node);
-    }
-    clade[node].sort();
-}
-
-Tree::Tree(const char* f1, const char* f2) : t(true)
-{
-    msn M;
-    Init(root = load_dag(f1, f2, clade, M));
-    TransitiveClosure();
-}
-
-Tree::Tree(const char* f1) : t(false)
-{
-    Init(root = load_tree(f1));
-    TransitiveClosure();
-}
-
-void Tree::Leaf(newick_node* node)
-{
-    if (!t)
-        clade[node].push_back(node->taxon);
-}
-
-void Tree::Child(newick_node* node, newick_node* child)
-{
-    ls &cl = clade[node], &cr = clade[child];
-//     cl.insert(cl.end(), cr.begin(), cr.end());
-}
-
-void LDAG::Relation(int l, int i)
-{
+    int n = graph.GetNumNodes();
     for (int j = 0; j < NR_THREADS; ++j)
-        R[j][l][i + _n] = INF;
-    G[l].push_back(i + _n);
-    G[i + _n].push_back(l);
+        R[j][l][i + n] = numeric_limits<double>::infinity();
+    G[l].push_back(i + n);
+    G[i + n].push_back(l);
 }

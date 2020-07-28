@@ -1,9 +1,9 @@
 /*
-    Copyright (C) 2018 Mislav Blažević
+    Copyright (C) 2018-2020 Mislav Blažević
 
-    This file is part of Trajan.
+    This file is part of dagmatch.
 
-    Trajan is free software: you can redistribute it and/or modify
+    dagmatch is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
@@ -12,7 +12,7 @@
 #include "AntichainConstraint.h"
 #include <thread>
 
-AntichainConstraint::AntichainConstraint(vector<ET>& Triplets, Graph& t1, Graph& t2, vvi& K, Vector& x, bool swp) : Constraint(Triplets, t1, t2, K, x, swp), G(((LDAG*)&t2)->G), ncr(0), B(t1.GetNumNodes()), pi(0)
+AntichainConstraint::AntichainConstraint(vector<ET>& Triplets, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp) : Constraint(Triplets, t1, t2, K, x, swp), G(t2.GetNetwork()->G), ncr(0), B(t1.GetNumNodes()), pi(0)
 {
     Z = t2.GetNumNodes();
     SZ = Z * 2 + 2;
@@ -39,23 +39,23 @@ void AntichainConstraint::RunParallel()
 
 void AntichainConstraint::AntichainJob(int id)
 {
-    LDAG &g1 = (LDAG&)t1, &g2 = (LDAG&)t2;
+    AntichainNetwork *g1 = t1.GetNetwork(), *g2 = t2.GetNetwork();
     while (true)
     {
         int i;
         {
             lock_guard<mutex> g(qmutex);
-            if (pi == g1.P.size())
+            if (pi == g1->P.size())
                 break;
             i = pi++;
-            if (all_of(g1.P[i].begin(), g1.P[i].end(), [&](newick_node* node){return B[node->taxoni];}))
+            if (all_of(g1->P[i].begin(), g1->P[i].end(), [&](int node){return B[node];}))
                 continue;
         }
-        Antichain(g1.P[i], g2.R[id]);
+        Antichain(g1->P[i], g2->R[id]);
     }
 }
 
-double AntichainConstraint::Push(int x, double flow, vvd& R, vi& D)
+double AntichainConstraint::Push(int x, double flow, vector<vd>& R, vi& D)
 {
     if (x == T)
         return flow;
@@ -66,7 +66,7 @@ double AntichainConstraint::Push(int x, double flow, vvd& R, vi& D)
     return D[x] = -1, 0;
 }
 
-bool AntichainConstraint::LevelGraph(vi& D, vvd& R)
+bool AntichainConstraint::LevelGraph(vi& D, vector<vd>& R)
 {
     queue<int> W;
     W.push(S);
@@ -82,7 +82,7 @@ bool AntichainConstraint::LevelGraph(vi& D, vvd& R)
     return false;
 }
 
-double AntichainConstraint::MaxFlow(vi& D, vvd& R)
+double AntichainConstraint::MaxFlow(vi& D, vector<vd>& R)
 {
     double flow = 0;
     while (LevelGraph(D, R))
@@ -94,7 +94,7 @@ double AntichainConstraint::MaxFlow(vi& D, vvd& R)
     return flow;
 }
 
-double AntichainConstraint::Reset(vn& P, vvd& R)
+double AntichainConstraint::Reset(vi& P, vector<vd>& R)
 {
     double sum = 0;
     for (int i = 0; i < Z; ++i)
@@ -103,17 +103,17 @@ double AntichainConstraint::Reset(vn& P, vvd& R)
         for (int j : G[i + Z])
             R[i + Z][j] = 0;
 
-        for (newick_node* nodel : P)
+        for (int nodel : P)
         {
-            R[S][i] += GetWeight(nodel->taxoni, i);
-            R[i + Z][T] += GetWeight(nodel->taxoni, i);
+            R[S][i] += GetWeight(nodel, i);
+            R[i + Z][T] += GetWeight(nodel, i);
         }
         sum += R[S][i];
     }
     return sum;
 }
 
-void AntichainConstraint::Antichain(vn& P, vvd& R)
+void AntichainConstraint::Antichain(vi& P, vector<vd>& R)
 {
     vi D(SZ, -1);
     double max = Reset(P, R);
@@ -124,14 +124,14 @@ void AntichainConstraint::Antichain(vn& P, vvd& R)
     vii PN;
     for (int i = 0; i < Z; ++i)
         if (D[i] != -1 && D[i + Z] == -1)
-            for (newick_node* nodel : P)
-                PN.emplace_back(nodel->taxoni, i);
+            for (int nodel : P)
+                PN.emplace_back(nodel, i);
 
     lock_guard<mutex> g(qmutex);
-    if (!all_of(P.begin(), P.end(), [&](newick_node* node){return B[node->taxoni];}))
+    if (!all_of(P.begin(), P.end(), [&](int node){return B[node];}))
     {
         AddConstraint(nr_rows + ncr++, PN);
-        for (newick_node* node : P)
-            B[node->taxoni] = true;
+        for (int node : P)
+            B[node] = true;
     }
 }

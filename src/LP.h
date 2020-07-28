@@ -1,9 +1,9 @@
 /*
-    Copyright (C) 2018 Mislav Blažević
+    Copyright (C) 2018-2020 Mislav Blažević
 
-    This file is part of Trajan.
+    This file is part of dagmatch.
 
-    Trajan is free software: you can redistribute it and/or modify
+    dagmatch is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
@@ -11,23 +11,19 @@
 #ifndef LP_H
 #define LP_H
 
-#include<iostream>
-
-#include "Solver.h"
+#include "Graph.h"
 #include "Geno.h"
 #include "IndependentSetConstraint.h"
 #include "AntichainConstraint.h"
 #include "CrossingConstraint.h"
 
-extern int c;
-
-class LP : public Solver
+class LP
 {
 public:
-    LP(Graph& t1, Graph& t2, string d, double k, bool dag);
-    ~LP();
+    LP(Graph& t1, Graph& t2);
+    virtual ~LP();
 
-    virtual void Solve(string filename, string outScoreFile = "score.csv");
+    virtual void Solve(string filename);
     void WriteSolution(string fileName);
 
 protected:
@@ -37,15 +33,19 @@ protected:
     template<int N> int Add(vector<ET>& Triplets, Vector& x, size_t& nr_rows);
     virtual bool SolveLP();
     void MatchingConstraints();
+    bool IsNotInConflict(int i, int j, int x, int y) const;
 
     vector<ET> Triplets;
     // backup x->warm_x and y->warm_y for two consecutive iterations
     Vector warm_x, warm_y;
     Vector x, y;
-    vvi K;
+    vector<vi> K;
     Vector c;
     int nr_rows, nr_cols;
     int cnt;
+
+    bool dag;
+    Graph &t1, &t2;
 };
 
 template<class T>

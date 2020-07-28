@@ -1,9 +1,9 @@
 /*
-    Copyright (C) 2018 Mislav Blažević
+    Copyright (C) 2018-2020 Mislav Blažević
 
-    This file is part of Trajan.
+    This file is part of dagmatch.
 
-    Trajan is free software: you can redistribute it and/or modify
+    dagmatch is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
@@ -12,11 +12,11 @@
 #include "Timer.h"
 #include <iostream>
 
-LPInt::LPInt(Graph& t1, Graph& t2, string d, double k, bool dag) : LP(t1, t2, d, k, dag)
+LPInt::LPInt(Graph& t1, Graph& t2) : LP(t1, t2)
 {
 }
 
-void LPInt::Solve(string filename, string outScoreFile)
+void LPInt::Solve(string filename)
 {
     int cnt = 1;
     for (int i = 0; cnt; i++)
@@ -27,8 +27,6 @@ void LPInt::Solve(string filename, string outScoreFile)
         WriteSolution(filename);
         T_lp.stop();
         clog << ">>> Time for solve: \t\t" << T_lp.secs() << " secs" << endl;
-        if (cf == 0)
-            break;
 
         vector<ii> E;
         for (size_t i = 0; i < K.size(); i++)
