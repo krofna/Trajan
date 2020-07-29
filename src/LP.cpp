@@ -53,7 +53,7 @@ void LP::MatchingConstraints()
 void LP::Solve(string filename, bool ilp)
 {
     int cnt = 1;
-    for (int i = 0; i < (ilp ? cnt : 10); i++)
+    for (int i = 0; i < cnt; i++)
     {
         Timer T_lp, T_cross, T_indep;
         T_lp.start();
@@ -61,6 +61,7 @@ void LP::Solve(string filename, bool ilp)
             SolveILP();
         else
             SolveLP();
+
         WriteSolution(filename);
         T_lp.stop();
         clog << ">>> Time for solve: \t\t" << T_lp.secs() << " secs" << endl;

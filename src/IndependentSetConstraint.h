@@ -23,9 +23,8 @@ public:
 
     int AddTriplets(int nr_rows);
 private:
-    void DFSRight(int noder);
-    void DFSLeft(int nodel, int noder, double w);
-    dLN DFSRight(int nodel, int noder);
+    void DFSLeft(int nodel, const int noder, double w);
+    dLN DFSRight(const int nodel, int noder);
 
     vector<vd> D;
 };

@@ -16,7 +16,9 @@ IndependentSetConstraint::IndependentSetConstraint(vector<ET>& Triplets, Graph& 
 
 int IndependentSetConstraint::AddTriplets(int nr_rows)
 {
-    DFSRight(t2.GetRoot());
+    for (int node : t2.nodes())
+        DFSLeft(t1.GetRoot(), node, 0);
+
     int ncr = 0;
     for (int node : t1.leaves())
     {
@@ -34,14 +36,7 @@ int IndependentSetConstraint::AddTriplets(int nr_rows)
     return ncr;
 }
 
-void IndependentSetConstraint::DFSRight(int noder)
-{
-    DFSLeft(t1.GetRoot(), noder, 0);
-    for (int child : t2.children(noder))
-        DFSRight(child);
-}
-
-void IndependentSetConstraint::DFSLeft(int nodel, int noder, double w)
+void IndependentSetConstraint::DFSLeft(int nodel, const int noder, double w)
 {
     if (t1.children(nodel).empty())
         D[nodel][noder] = w + GetWeight(nodel, noder);
@@ -49,7 +44,7 @@ void IndependentSetConstraint::DFSLeft(int nodel, int noder, double w)
         DFSLeft(child, noder, w + GetWeight(nodel, noder));
 }
 
-dLN IndependentSetConstraint::DFSRight(int nodel, int noder)
+dLN IndependentSetConstraint::DFSRight(const int nodel, int noder)
 {
     double w = D[nodel][noder], sum = 0;
     LN V;
