@@ -18,8 +18,6 @@ add_executable(dagmatch_lp
   src/Constraint.cpp
   src/IndependentSetConstraint.cpp
   src/CrossingConstraint.cpp
-  src/LPInt.cpp
-  src/LPFInt.cpp
   src/read_csv.cpp
   geno/augmentedLagrangian.cpp
   geno/lbfgsb.cpp

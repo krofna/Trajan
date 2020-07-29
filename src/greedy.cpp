@@ -195,5 +195,5 @@ int main(int argc, char** argv)
 
     // print the matching
     for (auto [x, y] : matching)
-        cout << t1.rm[x] << ' ' << t2.rm[y] << '\n';
+        cout << t1.rm[x] << ' ' << t2.rm[y] << ' ' << maxmatrix(x, y) / scale << '\n';
 }

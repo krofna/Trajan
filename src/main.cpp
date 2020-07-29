@@ -11,20 +11,7 @@
 #include <iostream>
 #include "Timer.h"
 #include "LP.h"
-#include "LPInt.h"
-#include "LPFInt.h"
 #include "read_csv.h"
-
-LP* MakeSolver(Graph& t1, Graph& t2, vector<vd>& matrix, int s)
-{
-    if (s == 0)
-        return new LP(t1, t2, matrix);
-    else if (s == 2)
-        return new LPInt(t1, t2, matrix);
-    else if (s == 3)
-        return new LPFInt(t1, t2, matrix);
-    return nullptr;
-}
 
 pair<Graph*, Graph*> MakeGraphs(char** argv)
 {
@@ -52,13 +39,27 @@ int main(int argc, char** argv)
         for (int j = 0; j < t2->GetNumNodes(); ++j)
             maxmatrix[i][j] = minmatrix[i][t2->GetNumNodes()] + minmatrix[t1->GetNumNodes()][j] - minmatrix[i][j];
 
-    LP* solver = MakeSolver(*t1, *t2, maxmatrix, stoi(argv[7]));
-    if (solver) solver->Solve(argv[6]);
+    LP solver(*t1, *t2, maxmatrix);
+    string output = argv[6];
+    switch (stoi(argv[7]))
+    {
+        case 0:
+            solver.Solve(output);
+            break;
+        case 1:
+            solver.Solve(output);
+            solver.SolveInt(output);
+            break;
+        case 2:
+            solver.SolveInt(output);
+            break;
+        default:
+            assert(false);
+    }
 
     T.stop();
     clog << "TIME: " << T.secs() << " secs" << endl;
 
-    delete solver;
     delete t1;
     delete t2;
 }
