@@ -15,7 +15,7 @@
 #include <limits>
 #define die() assert(false)
 
-Graph::Graph(const char* filename, const char* mapname) : network(nullptr)
+Graph::Graph(const char* filename, const char* mapname) : network(nullptr), root(-1)
 {
     ifstream file(filename), mapfile(mapname);
     if (!file || !mapfile)
@@ -67,6 +67,7 @@ Graph::Graph(const char* filename, const char* mapname) : network(nullptr)
         // found a leaf
         if (!nleaf[i])
             L.push_back(i);
+        N.push_back(i); // TODO: topsort
     }
 
     // there is no root

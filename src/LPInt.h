@@ -24,7 +24,7 @@ public:
 private:
     bool CC(const ii& a, const ii& b) const;
     void AddConstraint(const ii& a, const ii& b);
-    virtual bool SolveLP() override;
+    virtual void SolveLP() override;
 };
 
 #endif

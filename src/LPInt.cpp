@@ -58,7 +58,7 @@ void LPInt::AddConstraint(const ii& a, const ii& b)
     Triplets.emplace_back(nr_rows++, K[k][l], 1.);
 }
 
-bool LPInt::SolveLP()
+void LPInt::SolveLP()
 {
     clog << "nr_rows = " << nr_rows << " and nr_cols = " << nr_cols << endl;
 
@@ -86,5 +86,4 @@ bool LPInt::SolveLP()
 
     warm_x = x = Vector::ConstMapType(solver.x(), nr_cols);
     y = Vector::ConstMapType(solver.y(), nr_rows);
-    return true;
 }

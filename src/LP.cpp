@@ -88,7 +88,7 @@ void LP::Solve(string filename)
     }
 }
 
-bool LP::SolveLP()
+void LP::SolveLP()
 {
     clog << "nr_rows = " << nr_rows << " and nr_cols = " << nr_cols << endl;
 
@@ -116,7 +116,6 @@ bool LP::SolveLP()
 
     warm_x = x = Vector::ConstMapType(solver.x(), nr_cols);
     y = Vector::ConstMapType(solver.y(), nr_rows);
-    return true;
 }
 
 void LP::WriteSolution(string fileName)

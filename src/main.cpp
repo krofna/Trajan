@@ -45,7 +45,7 @@ int main(int argc, char** argv)
     // read dags
     auto [t1, t2] = MakeGraphs(argv);
     // read (minimization) weights
-    vector<vd> minmatrix = CSVReader(argv[5]).getDoubleData();
+    vector<vd> minmatrix = ReadCSV(argv[5]);
     // convert into maximization problem
     vector<vd> maxmatrix(t1->GetNumNodes(), vd(t2->GetNumNodes()));
     for (int i = 0; i < t1->GetNumNodes(); ++i)

@@ -601,7 +601,7 @@ int main(int argc, char** argv)
     // load the data
     tree t1(argv[1], argv[2]);
     tree t2(argv[3], argv[4]);
-    vector<vector<double>> cost_matrix = CSVReader(argv[5]).getDoubleData();
+    vector<vector<double>> cost_matrix = ReadCSV(argv[5]);
 
     // last row/column is deletion cost
     array2d minmatrix(t1.n + 1, t2.n + 1);

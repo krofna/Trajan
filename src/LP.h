@@ -29,7 +29,7 @@ public:
 protected:
     template<class T> int Add();
     template<int N> int Add();
-    virtual bool SolveLP();
+    virtual void SolveLP();
     void MatchingConstraints();
     bool IsNotInConflict(int i, int j, int x, int y) const;
 

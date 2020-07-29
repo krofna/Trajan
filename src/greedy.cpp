@@ -14,6 +14,7 @@
 #include <limits>
 #include <fstream>
 #include <cassert>
+#include <algorithm>
 #include "read_csv.h"
 #include "array2d.h"
 #define die() assert(false)
@@ -130,7 +131,7 @@ int main(int argc, char** argv)
     make_trans(t1, t1.r, D1);
     make_trans(t2, t2.r, D2);
 
-    vector<vector<double>> cost_matrix = CSVReader(argv[5]).getDoubleData();
+    vector<vector<double>> cost_matrix = ReadCSV(argv[5]);
 
     // last row/column is deletion cost
     array2d minmatrix(t1.n + 1, t2.n + 1);
@@ -178,6 +179,16 @@ int main(int argc, char** argv)
     int weight = 0;
     for (auto [x, y] : matching)
         weight += maxmatrix(x, y);
+
+    // minimization score of empty matching
+    int null_score = 0;
+    for (int i = 0; i < t1.n; ++i)
+        null_score += minmatrix(i, t2.n);
+    for (int i = 0; i < t2.n; ++i)
+        null_score += minmatrix(t1.n, i);
+
+    // convert to minimization score
+    weight = null_score - weight;
 
     // scale back the score
     clog << weight / scale << endl;
