@@ -117,11 +117,15 @@ bool valid(pair<int, int> a, pair<int, int> b, array2d& D1, array2d& D2)
 
 int main(int argc, char** argv)
 {
-    if (argc != 6)
+    if (argc != 6 && argc != 7)
     {
-        cout << "usage: " << argv[0] << " <graph1> <map1> <graph2> <map2> <matrix>\n";
+        cout << "compute usage: " << argv[0] << " <graph1> <map1> <graph2> <map2> <matrix>\n";
+        cout << "verify usage: " << argv[0] << " <graph1> <map1> <graph2> <map2> <matrix> <align>\n";
         return 0;
     }
+    // verify mode
+    bool verify = (argc == 7);
+
     // load the data
     graph t1(argv[1], argv[2]);
     graph t2(argv[3], argv[4]);
@@ -150,8 +154,18 @@ int main(int argc, char** argv)
         for (int j = 0; j < t2.n; ++j)
         {
             maxmatrix(i, j) = minmatrix(i, t2.n) + minmatrix(t1.n, j) - minmatrix(i, j);
-            edges.emplace_back(i, j);
+            if (!verify)
+                edges.emplace_back(i, j);
         }
+    }
+
+    // load the align file
+    if (verify)
+    {
+        ifstream align(argv[6]);
+        string a, b; double w;
+        while (align >> a >> b >> w)
+            edges.emplace_back(t1.m[a], t2.m[b]);
     }
 
     // sort edges by weight
