@@ -84,7 +84,6 @@ Graph::Graph(const char* filename, const char* mapname) : network(nullptr), root
     if (!is_tree)
         network = new AntichainNetwork(*this);
 
-    D.resize(n, vb(n));
     vector<vb> E(n, vb(n));
     for (int leaf : L)
         TransitiveClosure(leaf, leaf, E);
@@ -178,7 +177,6 @@ void Graph::TransitiveClosure(int node, int rnode, vector<vb>& C)
     int i = node;
     if (l != i)
     {
-        D[l][i] = true;
         if (network)
             network->AddEdge(l, i);
     }

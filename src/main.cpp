@@ -44,14 +44,14 @@ int main(int argc, char** argv)
     switch (stoi(argv[7]))
     {
         case 0:
-            solver.Solve(output);
+            solver.Solve(output, false);
             break;
         case 1:
-            solver.Solve(output);
-            solver.SolveInt(output);
+            solver.Solve(output, false);
+            solver.Solve(output, true);
             break;
         case 2:
-            solver.SolveInt(output);
+            solver.Solve(output, true);
             break;
         default:
             assert(false);

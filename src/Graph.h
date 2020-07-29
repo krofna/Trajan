@@ -39,8 +39,6 @@ public:
     const vi& nodes() const { return N; }
     string label(int node) const { return rm[node]; }
 
-    vector<vb> D;
-
 private:
     void TransitiveClosure(int node, int rnode, vector<vb>& C);
     void TransitiveReduction(int node, vb& C);

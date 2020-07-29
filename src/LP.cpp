@@ -20,14 +20,6 @@ LP::LP(Graph& t1, Graph& t2, vector<vd>& matrix) : t1(t1), t2(t2), matrix(matrix
     dag = t1.GetNetwork() || t2.GetNetwork();
 }
 
-bool LP::IsNotInConflict(int i, int j, int x, int y) const
-{
-    if (i == j || x == y) return false;
-    bool c2 = (t1.D[j][i] || t1.D[i][j]) == (t2.D[x][y] || t2.D[y][x]);
-    bool c1 = (t1.D[i][j] == t2.D[x][y]); // assuming c2 is satisfied
-    return c2 && c1;
-}
-
 void LP::MatchingConstraints()
 {
     cnt = 0;
@@ -58,14 +50,17 @@ void LP::MatchingConstraints()
     warm_y = Vector::Zero(nr_rows);
 }
 
-void LP::Solve(string filename)
+void LP::Solve(string filename, bool ilp)
 {
     int cnt = 1;
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < (ilp ? cnt : 10); i++)
     {
         Timer T_lp, T_cross, T_indep;
         T_lp.start();
-        LP::SolveLP();
+        if (ilp)
+            SolveILP();
+        else
+            SolveLP();
         WriteSolution(filename);
         T_lp.stop();
         clog << ">>> Time for solve: \t\t" << T_lp.secs() << " secs" << endl;
@@ -80,33 +75,6 @@ void LP::Solve(string filename)
         T_indep.stop();
         clog << ">>> Time for independent set constraints: \t\t" << T_indep.secs() << " secs" << endl;
 
-        clog << "Added " << cnt << " rows." << endl;
-    }
-}
-
-void LP::SolveInt(string filename)
-{
-    int cnt = 1;
-    for (int i = 0; cnt; i++)
-    {
-        Timer T_lp, T_cross, T_indep;
-        T_lp.start();
-        SolveLP();
-        WriteSolution(filename);
-        T_lp.stop();
-        clog << ">>> Time for solve: \t\t" << T_lp.secs() << " secs" << endl;
-
-        vector<ii> E;
-        for (size_t i = 0; i < K.size(); i++)
-            for (size_t j = 0; j < K[i].size(); j++)
-                if (K[i][j] != -1 && x(K[i][j]) > 1-1e-1)
-                    E.emplace_back(i, j);
-
-        cnt = 0;
-        for (int i = 0; i < E.size(); ++i)
-            for (int j = i + 1; j < E.size(); ++j)
-                if (!CC(E[i], E[j]))
-                    AddConstraint(E[i], E[j]), cnt++;
         clog << "Added " << cnt << " rows." << endl;
     }
 }
@@ -139,21 +107,6 @@ void LP::SolveLP()
 
     warm_x = x = Vector::ConstMapType(solver.x(), nr_cols);
     y = Vector::ConstMapType(solver.y(), nr_rows);
-}
-
-bool LP::CC(const ii& a, const ii& b) const
-{
-    int i = get<0>(a), j = get<0>(b);
-    int x = get<1>(a), y = get<1>(b);
-    return IsNotInConflict(i, j, x, y);
-}
-
-void LP::AddConstraint(const ii& a, const ii& b)
-{
-    int i = get<0>(a), j = get<1>(a);
-    int k = get<0>(b), l = get<1>(b);
-    Triplets.emplace_back(nr_rows, K[i][j], 1.);
-    Triplets.emplace_back(nr_rows++, K[k][l], 1.);
 }
 
 void LP::SolveILP()
