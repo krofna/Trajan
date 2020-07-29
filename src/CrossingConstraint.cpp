@@ -16,7 +16,7 @@ CrossingConstraint::CrossingConstraint(vector<ET>& Triplets, Graph& t1, Graph& t
     DP.resize(t1.GetNumNodes());
     PA.resize(t1.GetNumNodes());
     for (auto& v : DP)
-        v.resize(t2.GetNumNodes());
+        v.resize(t2.GetNumNodes(), -1);
 
     vb C(t1.GetNumNodes());
     DFSLeft(t1.GetRoot(), C);
@@ -33,8 +33,8 @@ int CrossingConstraint::AddTriplets(int nr_rows)
         Reconstruct(P, node, t2.GetRoot());
 
         double sum = 0;
-        for (auto k : P)
-            sum += GetWeight(k.first, k.second);
+        for (auto [u, v] : P)
+            sum += GetWeight(u, v);
 
         if (sum - EPS > 1)
             AddConstraint(nr_rows + ncr++, P);
@@ -63,11 +63,11 @@ void CrossingConstraint::CrossingJob(int i)
             lock_guard<mutex> g(qmutex);
             if (Q.empty())
             {
-                ax &= ~(1 << i);
+                ax &= ~(1ll << i);
                 continue;
             }
             else
-                ax |= 1 << i;
+                ax |= 1ll << i;
             node = Q.front();
             Q.pop();
         }
@@ -123,11 +123,15 @@ void CrossingConstraint::DFSLeft(int node, vb& C)
 
 double CrossingConstraint::DFSRight(int node, int nodel)
 {
+    double& sol = GetDP(nodel, node);
+    if (sol != -1)
+        return sol;
+
     double mx = 0;
     for (int child : t2.children(node))
         mx = max(mx, DFSRight(child, nodel));
     mx = max(mx, GetMaxParent(node, nodel).second);
-    return GetDP(nodel, node) = mx + GetWeight(nodel, node);
+    return sol = mx + GetWeight(nodel, node);
 }
 
 void CrossingConstraint::Reconstruct(vii& P, int nodel, int noder)

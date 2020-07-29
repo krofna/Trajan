@@ -16,9 +16,9 @@ Constraint::Constraint(vector<ET>& Triplets, Graph& t1, Graph& t2, vector<vi>& K
 
 void Constraint::AddConstraint(int row, vii& P)
 {
-    for (auto k : P)
+    for (auto [u, v] : P)
     {
-        int col = GetCol(k.first, k.second);
+        int col = GetCol(u, v);
         if (col != -1)
             Triplets.emplace_back(row, col, 1.);
     }
