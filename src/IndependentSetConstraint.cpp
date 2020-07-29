@@ -26,7 +26,7 @@ int IndependentSetConstraint::AddTriplets(int nr_rows)
 
         vii P;
         for (int noder : L.second)
-            for (int nodel : t1.parents(node))
+            for (int nodel = node; nodel != -1; nodel = (t1.parents(nodel).empty() ? -1 : t1.parents(nodel)[0]))
                 P.emplace_back(nodel, noder);
 
         AddConstraint(nr_rows + ncr++, P);

@@ -40,7 +40,6 @@ public:
     string label(int node) const { return rm[node]; }
 
 private:
-    void TransitiveClosure(int node, int rnode, vector<vb>& C);
     void TransitiveReduction(int node, vb& C);
     void TransitiveReduction(int parent, int node, vb& C);
 
@@ -71,7 +70,7 @@ public:
     vector<vd> R[NR_THREADS];
     vector<vi> P;
 
-    void AddEdge(int l, int i);
+    void TransitiveClosure(int node, int rnode, vector<vb>& C);
 
 private:
     void GenPaths(int node, vi& P);

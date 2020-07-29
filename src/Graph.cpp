@@ -82,11 +82,12 @@ Graph::Graph(const char* filename, const char* mapname) : network(nullptr), root
             is_tree = false;
 
     if (!is_tree)
+    {
         network = new AntichainNetwork(*this);
-
-    vector<vb> E(n, vb(n));
-    for (int leaf : L)
-        TransitiveClosure(leaf, leaf, E);
+        vector<vb> E(n, vb(n));
+        for (int leaf : L)
+            network->TransitiveClosure(leaf, leaf, E);
+    }
 }
 
 Graph::~Graph()
@@ -171,18 +172,21 @@ void AntichainNetwork::GenPaths(int node, vi& T)
     T.pop_back();
 }
 
-void Graph::TransitiveClosure(int node, int rnode, vector<vb>& C)
+void AntichainNetwork::TransitiveClosure(int node, int rnode, vector<vb>& C)
 {
     int l = rnode;
     int i = node;
     if (l != i)
     {
-        if (network)
-            network->AddEdge(l, i);
+        int n = graph.GetNumNodes();
+        for (int j = 0; j < NR_THREADS; ++j)
+            R[j][l][i + n] = numeric_limits<double>::infinity();
+        G[l].push_back(i + n);
+        G[i + n].push_back(l);
     }
 
     C[i][l] = true;
-    for (int parent : parents(node))
+    for (int parent : graph.parents(node))
     {
         int pn = parent;
         int pnt = pn;
@@ -191,13 +195,4 @@ void Graph::TransitiveClosure(int node, int rnode, vector<vb>& C)
         if (!C[pnt][pnt])
             TransitiveClosure(pn, pn, C);
     }
-}
-
-void AntichainNetwork::AddEdge(int l, int i)
-{
-    int n = graph.GetNumNodes();
-    for (int j = 0; j < NR_THREADS; ++j)
-        R[j][l][i + n] = numeric_limits<double>::infinity();
-    G[l].push_back(i + n);
-    G[i + n].push_back(l);
 }
