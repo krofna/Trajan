@@ -42,7 +42,6 @@ public:
     vector<vb> D;
 
 private:
-    void TransitiveClosure();
     void TransitiveClosure(int node, int rnode, vector<vb>& C);
     void TransitiveReduction(int node, vb& C);
     void TransitiveReduction(int parent, int node, vb& C);

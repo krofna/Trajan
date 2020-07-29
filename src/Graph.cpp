@@ -83,6 +83,11 @@ Graph::Graph(const char* filename, const char* mapname) : network(nullptr), root
 
     if (!is_tree)
         network = new AntichainNetwork(*this);
+
+    D.resize(n, vb(n));
+    vector<vb> E(n, vb(n));
+    for (int leaf : L)
+        TransitiveClosure(leaf, leaf, E);
 }
 
 Graph::~Graph()
@@ -167,14 +172,6 @@ void AntichainNetwork::GenPaths(int node, vi& T)
     T.pop_back();
 }
 
-void Graph::TransitiveClosure()
-{
-    D.resize(n, vb(n));
-    vector<vb> C(n, vb(n));
-    for (int leaf : L)
-        TransitiveClosure(leaf, leaf, C);
-}
-
 void Graph::TransitiveClosure(int node, int rnode, vector<vb>& C)
 {
     int l = rnode;
@@ -182,7 +179,8 @@ void Graph::TransitiveClosure(int node, int rnode, vector<vb>& C)
     if (l != i)
     {
         D[l][i] = true;
-        network->AddEdge(l, i);
+        if (network)
+            network->AddEdge(l, i);
     }
 
     C[i][l] = true;

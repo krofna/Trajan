@@ -17,7 +17,6 @@ vector<vector<double>> ReadCSV(string filename)
 
         istringstream ss(s);
         vector<double> record;
-        int removefist = 0;
         while (ss)
         {
             string line;
@@ -26,10 +25,7 @@ vector<vector<double>> ReadCSV(string filename)
 
             try
             {
-                if (removefist >= 0)
-                    record.push_back(stod(line));
-                else
-                    removefist++;
+                record.push_back(stod(line));
             }
             catch (const invalid_argument e) {
                 cout << "NaN found in file" << endl;
@@ -39,10 +35,7 @@ vector<vector<double>> ReadCSV(string filename)
     }
 
     if (!inputFile.eof())
-    {
-        cerr << "Could not read file " << filename << "\n";
         __throw_invalid_argument("File not found.");
-    }
 
     return data;
 }
