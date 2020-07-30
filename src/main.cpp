@@ -48,6 +48,16 @@ int main(int argc, char** argv)
         case 2:
             solver.Solve(output, true);
             break;
+        case 3:
+            solver.SolvePairwise(output, false);
+            break;
+        case 4:
+            solver.SolvePairwise(output, false);
+            solver.SolvePairwise(output, true);
+            break;
+        case 5:
+            solver.SolvePairwise(output, true);
+            break;
         default:
             assert(false);
     }

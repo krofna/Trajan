@@ -79,6 +79,59 @@ void LP::Solve(string filename, bool ilp)
     }
 }
 
+void LP::SolvePairwise(string filename, bool ilp)
+{
+    int cnt = 1;
+    for (int i = 0; cnt; i++)
+    {
+        Timer T_lp, T_cross, T_indep;
+        T_lp.start();
+        if (ilp)
+            SolveILP();
+        else
+            SolveLP();
+
+        WriteSolution(filename);
+        T_lp.stop();
+        clog << ">>> Time for solve: \t\t" << T_lp.secs() << " secs" << endl;
+
+        vector<ii> E;
+        for (size_t i = 0; i < t1.GetNumNodes(); ++i)
+            for (size_t j = 0; j < t2.GetNumNodes(); ++j)
+                if (K[i][j] != -1)
+                    E.emplace_back(i, j);
+
+        cnt = 0;
+        for (int i = 0; i < E.size(); ++i)
+        {
+            auto [p, q] = E[i];
+            for (int j = i + 1; j < E.size(); ++j)
+            {
+                auto [r, s] = E[j];
+                if (x(K[p][q]) + x(K[r][s]) > 1+1e-3 && !IsNotInConflict(p, r, q, s))
+                    AddConstraint(E[i], E[j]), cnt++;
+            }
+        }
+        clog << "Added " << cnt << " rows." << endl;
+    }
+}
+
+bool LP::IsNotInConflict(int i, int j, int x, int y) const
+{
+    if (i == j || x == y) return false;
+    bool c2 = (t1.D[j][i] || t1.D[i][j]) == (t2.D[x][y] || t2.D[y][x]);
+    bool c1 = (t1.D[i][j] == t2.D[x][y]); // assuming c2 is satisfied
+    return c2 && c1;
+}
+
+void LP::AddConstraint(const ii& a, const ii& b)
+{
+    int i = get<0>(a), j = get<1>(a);
+    int k = get<0>(b), l = get<1>(b);
+    Triplets.emplace_back(nr_rows, K[i][j], 1.);
+    Triplets.emplace_back(nr_rows++, K[k][l], 1.);
+}
+
 void LP::SolveLP()
 {
     clog << "nr_rows = " << nr_rows << " and nr_cols = " << nr_cols << endl;

@@ -81,8 +81,9 @@ Graph::Graph(const char* filename, const char* mapname) : network(nullptr), root
         if (radj[i].size() > 1)
             is_tree = false;
 
-    if (!is_tree)
+    //if (!is_tree)
     {
+        D.resize(n, vb(n));
         network = new AntichainNetwork(*this);
         vector<vb> E(n, vb(n));
         for (int leaf : L)
@@ -178,6 +179,7 @@ void AntichainNetwork::TransitiveClosure(int node, int rnode, vector<vb>& C)
     int i = node;
     if (l != i)
     {
+        graph.D[l][i] = true;
         int n = graph.GetNumNodes();
         for (int j = 0; j < NR_THREADS; ++j)
             R[j][l][i + n] = numeric_limits<double>::infinity();

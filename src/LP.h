@@ -25,6 +25,7 @@ public:
     LP(Graph& t1, Graph& t2, vector<vd>& matrix);
 
     void Solve(string filename, bool ilp);
+    void SolvePairwise(string filename, bool ilp);
     void SolveInt(string filename);
     void WriteSolution(string fileName);
 
@@ -35,6 +36,9 @@ private:
     void SolveLP();
     void SolveILP();
     void MatchingConstraints();
+
+    bool IsNotInConflict(int i, int j, int x, int y) const;
+    void AddConstraint(const ii& a, const ii& b);
 
     vector<ET> Triplets;
     // backup x->warm_x and y->warm_y for two consecutive iterations
