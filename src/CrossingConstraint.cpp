@@ -11,13 +11,8 @@
 #include "CrossingConstraint.h"
 #include <thread>
 
-CrossingConstraint::CrossingConstraint(vector<ET>& Triplets, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp) : Constraint(Triplets, t1, t2, K, x, swp)
+CrossingConstraint::CrossingConstraint(vector<ET>& Triplets, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp) : Constraint(Triplets, t1, t2, K, x, swp), DP(t1.GetNumNodes(), vd(t2.GetNumNodes(), -1)), PA(t1.GetNumNodes())
 {
-    DP.resize(t1.GetNumNodes());
-    PA.resize(t1.GetNumNodes());
-    for (auto& v : DP)
-        v.resize(t2.GetNumNodes(), -1);
-
     vb C(t1.GetNumNodes());
     DFSLeft(t1.GetRoot(), C);
     Q.push(t1.GetRoot());
