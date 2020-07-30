@@ -13,8 +13,9 @@
 
 CrossingConstraint::CrossingConstraint(vector<ET>& Triplets, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp) : Constraint(Triplets, t1, t2, K, x, swp), DP(t1.GetNumNodes(), vd(t2.GetNumNodes(), -1)), PA(t1.GetNumNodes())
 {
-    vb C(t1.GetNumNodes());
-    DFSLeft(t1.GetRoot(), C);
+    for (int node : t1.nodes())
+        PA[node] = t1.parents(node).size();
+
     Q.push(t1.GetRoot());
     RunParallel();
 }
@@ -103,17 +104,6 @@ inline pair<int, double> CrossingConstraint::GetMaxChild(int nodel, int noder)
 inline pair<int, double> CrossingConstraint::GetMaxParent(int nodel, int noder)
 {
     return GetMaxPC(nodel, t2.parents(noder), true);
-}
-
-void CrossingConstraint::DFSLeft(int node, vb& C)
-{
-    C[node] = true;
-    for (int child : t1.children(node))
-    {
-        PA[child]++;
-        if (!C[child])
-            DFSLeft(child, C);
-    }
 }
 
 double CrossingConstraint::DFSRight(int node, int nodel)
