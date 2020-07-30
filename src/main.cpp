@@ -13,11 +13,6 @@
 #include "LP.h"
 #include "read_csv.h"
 
-pair<Graph*, Graph*> MakeGraphs(char** argv)
-{
-    return {new Graph(argv[1], argv[2]), new Graph(argv[3], argv[4])};
-}
-
 int main(int argc, char** argv)
 {
     if (argc != 8)
@@ -30,16 +25,16 @@ int main(int argc, char** argv)
     T.start();
 
     // read dags
-    auto [t1, t2] = MakeGraphs(argv);
+    Graph t1(argv[1], argv[2]), t2(argv[3], argv[4]);
     // read (minimization) weights
     vector<vd> minmatrix = ReadCSV(argv[5]);
     // convert into maximization problem
-    vector<vd> maxmatrix(t1->GetNumNodes(), vd(t2->GetNumNodes()));
-    for (int i = 0; i < t1->GetNumNodes(); ++i)
-        for (int j = 0; j < t2->GetNumNodes(); ++j)
-            maxmatrix[i][j] = minmatrix[i][t2->GetNumNodes()] + minmatrix[t1->GetNumNodes()][j] - minmatrix[i][j];
+    vector<vd> maxmatrix(t1.GetNumNodes(), vd(t2.GetNumNodes()));
+    for (int i = 0; i < t1.GetNumNodes(); ++i)
+        for (int j = 0; j < t2.GetNumNodes(); ++j)
+            maxmatrix[i][j] = minmatrix[i][t2.GetNumNodes()] + minmatrix[t1.GetNumNodes()][j] - minmatrix[i][j];
 
-    LP solver(*t1, *t2, maxmatrix);
+    LP solver(t1, t2, maxmatrix);
     string output = argv[6];
     switch (stoi(argv[7]))
     {
@@ -59,7 +54,4 @@ int main(int argc, char** argv)
 
     T.stop();
     clog << "TIME: " << T.secs() << " secs" << endl;
-
-    delete t1;
-    delete t2;
 }

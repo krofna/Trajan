@@ -23,13 +23,7 @@ vector<vector<double>> ReadCSV(string filename)
             if (!getline(ss, line, ','))
                 break;
 
-            try
-            {
-                record.push_back(stod(line));
-            }
-            catch (const invalid_argument e) {
-                cout << "NaN found in file" << endl;
-            }
+            record.push_back(stod(line));
         }
         data.push_back(record);
     }

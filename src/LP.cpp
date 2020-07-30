@@ -23,7 +23,6 @@ LP::LP(Graph& t1, Graph& t2, vector<vd>& matrix) : t1(t1), t2(t2), matrix(matrix
 void LP::MatchingConstraints()
 {
     cnt = 0;
-    vb P(t1.GetNumNodes());
     int n = t1.GetNumNodes(), m = t2.GetNumNodes();
     for (int i : t1.nodes())
     {
