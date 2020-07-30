@@ -52,7 +52,7 @@ void LP::MatchingConstraints()
 void LP::Solve(string filename, bool ilp)
 {
     int cnt = 1;
-    for (int i = 0; i < cnt; i++)
+    for (int i = 0; cnt; i++)
     {
         Timer T_lp, T_cross, T_indep;
         T_lp.start();
