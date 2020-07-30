@@ -103,7 +103,7 @@ inline pair<int, double> CrossingConstraint::GetMaxChild(int nodel, int noder)
 
 inline pair<int, double> CrossingConstraint::GetMaxParent(int nodel, int noder)
 {
-    return GetMaxPC(nodel, t2.parents(noder), true);
+    return GetMaxPC(nodel, t1.parents(noder), true);
 }
 
 double CrossingConstraint::DFSRight(int node, int nodel)
