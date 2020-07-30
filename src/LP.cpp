@@ -148,7 +148,7 @@ void LP::WriteSolution(string fileName)
     {
         for (size_t j = 0; j < K[i].size(); j++)
         {
-            if (K[i][j] != -1 && x(K[i][j]) > 1e-5)
+            if (K[i][j] != -1 && x(K[i][j]) > 1e-3)
             {
                 weight += x(K[i][j]) * c(K[i][j]);
                 sol_file << t1.label(n1[i]) << " " << t2.label(n2[j]) << " " << x(K[i][j]) << "\n";
@@ -158,5 +158,4 @@ void LP::WriteSolution(string fileName)
     ofstream trp_file(fileName + ".trp");
     for (auto& t : Triplets)
         trp_file << t.row() << " " << t.col() << " " << t.value() << '\n';
-    cout << weight << endl;
 }

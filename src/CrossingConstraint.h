@@ -30,7 +30,6 @@ private:
 
     void RunParallel();
     void CrossingJob(int i);
-    void DFSLeft(int node, vb& C);
     double DFSRight(int node, int nodel);
     void Reconstruct(vii& P, int nodel, int noder);
     inline double& GetDP(int nodel, int noder, bool s);
