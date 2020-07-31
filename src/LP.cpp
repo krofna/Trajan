@@ -13,7 +13,7 @@
 #include <iostream>
 #include <fstream>
 
-LP::LP(Graph& t1, Graph& t2, vector<vd>& matrix) : t1(t1), t2(t2), matrix(matrix), c(t1.GetNumNodes() * t2.GetNumNodes()), nr_rows(0), nr_cols(0)
+LP::LP(Graph& t1, Graph& t2, vector<vd>& matrix) : t1(t1), t2(t2), matrix(matrix), c(t1.GetNumNodes() * t2.GetNumNodes()), nr_rows(0), nr_cols(0), solver("LP", MPSolver::GLOP_LINEAR_PROGRAMMING), objective(solver.MutableObjective()), infinity(solver.infinity())
 {
     K.resize(t1.GetNumNodes(), vi(t2.GetNumNodes(), -1));
     MatchingConstraints();
@@ -24,6 +24,11 @@ void LP::MatchingConstraints()
 {
     cnt = 0;
     int n = t1.GetNumNodes(), m = t2.GetNumNodes();
+    for (int i = 0; i < n; ++i)
+        constraints.push_back(solver.MakeRowConstraint(-infinity, 1));
+    for (int j = 0; j < m; ++j)
+        constraints.push_back(solver.MakeRowConstraint(-infinity, 1));
+
     for (int i : t1.nodes())
     {
         for (int j : t2.nodes())
@@ -33,14 +38,20 @@ void LP::MatchingConstraints()
             {
                 int col = i * m + j - cnt;
                 K[i][j] = col;
+                variables.push_back(solver.MakeNumVar(0.0, infinity, to_string(col)));
+                constraints[i]->SetCoefficient(variables.back(), 1);
+                constraints[n + j]->SetCoefficient(variables.back(), 1);
                 Triplets.emplace_back(i, col, 1.);
                 Triplets.emplace_back(n + j, col, 1.);
+                objective->SetCoefficient(variables.back(), w);
                 c(col) = w;
             }
             else
                 ++cnt;
         }
     }
+    objective->SetMaximization();
+    solver.SetNumThreads(4);
     nr_rows = n + m;
     nr_cols = n * m - cnt;
     c.conservativeResize(nr_cols);
@@ -129,37 +140,39 @@ void LP::AddConstraint(const ii& a, const ii& b)
     int i = get<0>(a), j = get<1>(a);
     int k = get<0>(b), l = get<1>(b);
     Triplets.emplace_back(nr_rows, K[i][j], 1.);
-    Triplets.emplace_back(nr_rows++, K[k][l], 1.);
+    Triplets.emplace_back(nr_rows, K[k][l], 1.);
+    constraints.push_back(solver.MakeRowConstraint(-infinity, 1));
+    constraints[nr_rows]->SetCoefficient(variables[K[i][j]], 1);
+    constraints[nr_rows]->SetCoefficient(variables[K[k][l]], 1);
+    nr_rows++;
 }
+
+bool kek;
 
 void LP::SolveLP()
 {
-    clog << "nr_rows = " << nr_rows << " and nr_cols = " << nr_cols << endl;
+    if (kek)
+    {
+        vector<pair<const MPVariable*, double> > hint;
+        for (int i : t1.nodes())
+            for (int j : t2.nodes())
+                if (K[i][j] != -1)
+                    hint.emplace_back(variables[K[i][j]], x(K[i][j]));
+        solver.SetHint(hint);
+    }
+    kek = true;
+    const MPSolver::ResultStatus result_status = solver.Solve();
+    if (result_status != MPSolver::OPTIMAL) {
+        LOG(FATAL) << "The problem does not have an optimal solution!";
+    }
 
-    SpMat A(nr_rows, nr_cols);
-    A.setFromTriplets(Triplets.begin(), Triplets.end());
-    SpMat A_t = A.transpose();
-    Vector b = Vector::Ones(nr_rows);
-
+    LOG(INFO) << "Solution:";
+    LOG(INFO) << "Optimal objective value = " << objective->Value();
+    for (size_t i = 0; i < K.size(); i++)
+        for (size_t j = 0; j < K[i].size(); j++)
+            if (K[i][j] != -1)
+                warm_x(K[i][j]) = variables[K[i][j]]->solution_value();
     x = warm_x;
-    //x = Vector::Zero(nr_cols);
-    y = Vector::Zero(nr_rows);
-
-    Vector c1 = -c;
-    PackingJRF simpleJRF(A, b, c1, warm_x, y);
-    AugmentedLagrangian solver(simpleJRF, 15);
-    solver.setParameter("verbose", false);
-    solver.setParameter("pgtol", 1e-1); // should influence running time a lot
-    solver.setParameter("constraintsTol", 1e-3);
-    Timer timeGeno;
-    timeGeno.start();
-    solver.solve();
-    timeGeno.stop();
-
-    clog << "f = " << solver.f() << " computed in time: " << timeGeno.secs() << " secs" << endl;
-
-    warm_x = x = Vector::ConstMapType(solver.x(), nr_cols);
-    y = Vector::ConstMapType(solver.y(), nr_rows);
 }
 
 void LP::SolveILP()

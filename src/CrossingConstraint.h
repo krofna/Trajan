@@ -20,7 +20,7 @@
 class CrossingConstraint : Constraint
 {
 public:
-    CrossingConstraint(vector<ET>& Triplets, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp);
+    CrossingConstraint(MPSolver& solver, vector<ET>& Triplets, vector<MPConstraint*>& constraints, vector<MPVariable*>& variables, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp);
     
     int AddTriplets(int nr_rows);
 private:

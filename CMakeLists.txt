@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(dagmatch CXX)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -O2 -march=native")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -O2 -march=native -lglog -lortools")
  
 find_package(Eigen3 REQUIRED NO_MODULE)
 find_package(Threads REQUIRED)

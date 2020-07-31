@@ -16,6 +16,9 @@
 #include <utility>
 using namespace std;
 
+#include <ortools/linear_solver/linear_solver.h>
+using namespace operations_research;
+
 const double EPS = 1e-2;
 
 typedef vector<pair<int, int>> vii;
@@ -23,7 +26,7 @@ typedef vector<pair<int, int>> vii;
 class Constraint
 {
 public:
-    Constraint(vector<ET>& Triplets, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp);
+    Constraint(MPSolver& solver, vector<ET>& Triplets, vector<MPConstraint*>& constraints, vector<MPVariable*>& variables, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp);
 
     virtual int AddTriplets(int nr_rows) = 0;
 protected:
@@ -31,6 +34,9 @@ protected:
     inline double GetWeight(int nodel, int noder) const;
     void AddConstraint(int row, vii& P);
 
+    MPSolver& solver;
+    vector<MPConstraint*>& constraints;
+    vector<MPVariable*>& variables;
     vector<ET> &Triplets;
     Graph &t1, &t2;
     vector<vi> &K;

@@ -18,7 +18,7 @@
 class AntichainConstraint : Constraint
 {
 public:
-    AntichainConstraint(vector<ET>& Triplets, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp);
+    AntichainConstraint(MPSolver& solver, vector<ET>& Triplets, vector<MPConstraint*>& constraints, vector<MPVariable*>& variables, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp);
     int AddTriplets(int nr_rows);
 
 private:

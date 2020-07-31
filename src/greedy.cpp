@@ -21,6 +21,8 @@
 #define dbg(x) cerr << #x << " = " << x << endl
 using namespace std;
 
+typedef vector<bool> vb;
+
 struct graph
 {
     // mapping of node identifiers to nodes
@@ -89,19 +91,11 @@ struct graph
 };
 
 // transitive closure auxiliary
-void trans_closure(const graph& t, int x, int r, array2d& D)
+void trans_closure(const graph& t, int x, const int r, array2d& D)
 {
     D(r, x) = 1;
     for (int y : t.adj[x])
         trans_closure(t, y, r, D);
-}
-
-// fill transitive closure table
-void make_trans(const graph& t, int x, array2d& D)
-{
-    trans_closure(t, x, x, D);
-    for (int y : t.adj[x])
-        make_trans(t, y, D);
 }
 
 // return true iff edges a and b can simultaneously be in an arboreal matching
@@ -132,29 +126,43 @@ int main(int argc, char** argv)
 
     // ancestry relationship tables
     array2d D1(t1.n, t1.n, 0), D2(t2.n, t2.n, 0);
-    make_trans(t1, t1.r, D1);
-    make_trans(t2, t2.r, D2);
+    vector<vb> E1(t1.n, vb(t1.n)), E2(t2.n, vb(t2.n));
+    for (int i = 0; i < t1.n; ++i)
+        trans_closure(t1, i, i, D1);
+    for (int i = 0; i < t2.n; ++i)
+        trans_closure(t2, i, i, D2);
 
-    vector<vector<double>> cost_matrix = ReadCSV(argv[5]);
+    // vector<vector<double>> cost_matrix = ReadCSV(argv[5]);
 
-    // last row/column is deletion cost
-    array2d minmatrix(t1.n + 1, t2.n + 1);
+    // // last row/column is deletion cost
+    // array2d minmatrix(t1.n + 1, t2.n + 1);
 
-    // convert scores to integers
+    // // convert scores to integers
     const double scale = 1000;
-    for (int i = 0; i < t1.n + 1; ++i)
-        for (int j = 0; j < t2.n + 1; ++j)
-            minmatrix(i, j) = scale * cost_matrix[i][j];
+    // for (int i = 0; i < t1.n + 1; ++i)
+    //     for (int j = 0; j < t2.n + 1; ++j)
+    //         minmatrix(i, j) = scale * cost_matrix[i][j];
 
     // convert into maximization problem
     array2d maxmatrix(t1.n, t2.n);
     vector<pair<int, int>> edges;
+    ifstream matrix(argv[5]);
     for (int i = 0; i < t1.n; ++i)
     {
         for (int j = 0; j < t2.n; ++j)
         {
-            maxmatrix(i, j) = minmatrix(i, t2.n) + minmatrix(t1.n, j) - minmatrix(i, j);
-            if (!verify)
+            double val;
+            matrix >> val;
+            maxmatrix(i, j) = val * scale;
+        }
+    }
+
+    for (int i = 0; i < t1.n; ++i)
+    {
+        for (int j = 0; j < t2.n; ++j)
+        {
+            //maxmatrix(i, j) = minmatrix(i, t2.n) + minmatrix(t1.n, j) - minmatrix(i, j);
+            if (!verify && maxmatrix(i, j) > 0)
                 edges.emplace_back(i, j);
         }
     }
@@ -195,14 +203,14 @@ int main(int argc, char** argv)
         weight += maxmatrix(x, y);
 
     // minimization score of empty matching
-    int null_score = 0;
-    for (int i = 0; i < t1.n; ++i)
-        null_score += minmatrix(i, t2.n);
-    for (int i = 0; i < t2.n; ++i)
-        null_score += minmatrix(t1.n, i);
+    // int null_score = 0;
+    // for (int i = 0; i < t1.n; ++i)
+    //     null_score += minmatrix(i, t2.n);
+    // for (int i = 0; i < t2.n; ++i)
+    //     null_score += minmatrix(t1.n, i);
 
     // convert to minimization score
-    weight = null_score - weight;
+    //weight = null_score - weight;
 
     // scale back the score
     clog << weight / scale << endl;

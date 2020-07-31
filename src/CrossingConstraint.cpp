@@ -11,7 +11,7 @@
 #include "CrossingConstraint.h"
 #include <thread>
 
-CrossingConstraint::CrossingConstraint(vector<ET>& Triplets, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp) : Constraint(Triplets, t1, t2, K, x, swp), DP(t1.GetNumNodes(), vd(t2.GetNumNodes(), -1)), PA(t1.GetNumNodes())
+CrossingConstraint::CrossingConstraint(MPSolver& solver, vector<ET>& Triplets, vector<MPConstraint*>& constraints, vector<MPVariable*>& variables, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp) : Constraint(solver, Triplets, constraints, variables, t1, t2, K, x, swp), DP(t1.GetNumNodes(), vd(t2.GetNumNodes(), -1)), PA(t1.GetNumNodes())
 {
     for (int node : t1.nodes())
         PA[node] = t1.parents(node).size();

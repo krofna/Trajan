@@ -10,16 +10,20 @@
 */
 #include "Constraint.h"
 
-Constraint::Constraint(vector<ET>& Triplets, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp) : Triplets(Triplets), t1(t1), t2(t2), K(K), x(x), swp(swp)
+Constraint::Constraint(MPSolver& solver, vector<ET>& Triplets, vector<MPConstraint*>& constraints, vector<MPVariable*>& variables, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp) : solver(solver), Triplets(Triplets), constraints(constraints), variables(variables), t1(t1), t2(t2), K(K), x(x), swp(swp)
 {
 }
 
 void Constraint::AddConstraint(int row, vii& P)
 {
+    constraints.push_back(solver.MakeRowConstraint(-solver.infinity(), 1));
     for (auto [u, v] : P)
     {
         int col = GetCol(u, v);
         if (col != -1)
+        {
             Triplets.emplace_back(row, col, 1.);
+            constraints[row]->SetCoefficient(variables[col], 1);
+        }
     }
 }

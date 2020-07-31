@@ -108,43 +108,6 @@ protected:
     Index _m;
 };
 
-class CoveringJRF : public SimpleJRF
-{
- public:
-    CoveringJRF(const SpMat& A,
-                const Vector& b,
-                const Vector& c,
-                Vector& x,
-                Vector& y): SimpleJRF(A, b, c, x, y) { }
-    bool getBoundsConstraints(Scalar* cl, Scalar* cu) override
-    {
-    // we have equality constraints here
-        Vector::MapType(cl, _m) = _b;
-        Vector::MapType(cu, _m) = Vector::Constant(_m, INF);
-        return true;
-    }
-
-};
-
-
-class PackingJRF : public SimpleJRF
-{
- public:
-    PackingJRF(const SpMat& A,
-                const Vector& b,
-                const Vector& c,
-                Vector& x,
-                Vector& y): SimpleJRF(A, b, c, x, y) { }
-    bool getBoundsConstraints(Scalar* cl, Scalar* cu) override
-    {
-    // we have equality constraints here
-        Vector::MapType(cu, _m) = _b;
-        Vector::MapType(cl, _m) = Vector::Constant(_m, -INF);
-        return true;
-    }
-};
-
-
 /*
  min c^tx
      x_i(1-x_i) = 0, forall i=1,...,n

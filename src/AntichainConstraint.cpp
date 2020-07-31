@@ -12,7 +12,7 @@
 #include "AntichainConstraint.h"
 #include <thread>
 
-AntichainConstraint::AntichainConstraint(vector<ET>& Triplets, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp) : Constraint(Triplets, t1, t2, K, x, swp), G(t2.GetNetwork()->G), ncr(0), B(t1.GetNumNodes()), pi(0)
+AntichainConstraint::AntichainConstraint(MPSolver& solver, vector<ET>& Triplets, vector<MPConstraint*>& constraints, vector<MPVariable*>& variables, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp) : Constraint(solver, Triplets, constraints, variables, t1, t2, K, x, swp), G(t2.GetNetwork()->G), ncr(0), B(t1.GetNumNodes()), pi(0)
 {
     Z = t2.GetNumNodes();
     SZ = Z * 2 + 2;

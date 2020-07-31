@@ -10,7 +10,7 @@
 */
 #include "IndependentSetConstraint.h"
 
-IndependentSetConstraint::IndependentSetConstraint(vector<ET>& Triplets, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp) : Constraint(Triplets, t1, t2, K, x, swp), D(t1.GetNumNodes(), vd(t2.GetNumNodes()))
+IndependentSetConstraint::IndependentSetConstraint(MPSolver& solver, vector<ET>& Triplets, vector<MPConstraint*>& constraints, vector<MPVariable*>& variables, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp) : Constraint(solver, Triplets, constraints, variables, t1, t2, K, x, swp), D(t1.GetNumNodes(), vd(t2.GetNumNodes()))
 {
 }
 

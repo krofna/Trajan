@@ -19,7 +19,7 @@ typedef pair<double, LN> dLN;
 class IndependentSetConstraint : Constraint
 {
 public:
-    IndependentSetConstraint(vector<ET>& Triplets, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp);
+    IndependentSetConstraint(MPSolver& solver, vector<ET>& Triplets, vector<MPConstraint*>& constraints, vector<MPVariable*>& variables, Graph& t1, Graph& t2, vector<vi>& K, Vector& x, bool swp);
 
     int AddTriplets(int nr_rows);
 private:

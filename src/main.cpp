@@ -13,6 +13,8 @@
 #include "LP.h"
 #include "read_csv.h"
 
+#include <fstream>
+
 int main(int argc, char** argv)
 {
     if (argc != 8)
@@ -27,12 +29,16 @@ int main(int argc, char** argv)
     // read dags
     Graph t1(argv[1], argv[2]), t2(argv[3], argv[4]);
     // read (minimization) weights
-    vector<vd> minmatrix = ReadCSV(argv[5]);
+    //vector<vd> minmatrix = ReadCSV(argv[5]);
     // convert into maximization problem
     vector<vd> maxmatrix(t1.GetNumNodes(), vd(t2.GetNumNodes()));
+    // for (int i = 0; i < t1.GetNumNodes(); ++i)
+    //     for (int j = 0; j < t2.GetNumNodes(); ++j)
+    //         maxmatrix[i][j] = minmatrix[i][t2.GetNumNodes()] + minmatrix[t1.GetNumNodes()][j] - minmatrix[i][j];
+    ifstream matrix(argv[5]);
     for (int i = 0; i < t1.GetNumNodes(); ++i)
         for (int j = 0; j < t2.GetNumNodes(); ++j)
-            maxmatrix[i][j] = minmatrix[i][t2.GetNumNodes()] + minmatrix[t1.GetNumNodes()][j] - minmatrix[i][j];
+            matrix >> maxmatrix[i][j];
 
     LP solver(t1, t2, maxmatrix);
     string output = argv[6];
