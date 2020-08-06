@@ -147,20 +147,52 @@ void LP::AddConstraint(const ii& a, const ii& b)
     nr_rows++;
 }
 
+void LP::SolveGeno()
+{
+    clog << "nr_rows = " << nr_rows << " and nr_cols = " << nr_cols << endl;
+
+    SpMat A(nr_rows, nr_cols);
+    A.setFromTriplets(Triplets.begin(), Triplets.end());
+    SpMat A_t = A.transpose();
+    Vector b = Vector::Ones(nr_rows);
+
+    x = warm_x;
+    //x = Vector::Zero(nr_cols);
+    y = Vector::Zero(nr_rows);
+
+    Vector c1 = -c;
+    PackingJRF simpleJRF(A, b, c1, warm_x, y);
+    AugmentedLagrangian solver(simpleJRF, 15);
+    solver.setParameter("verbose", false);
+    solver.setParameter("pgtol", 1e-1); // should influence running time a lot
+    solver.setParameter("constraintsTol", 1e-3);
+    Timer timeGeno;
+    timeGeno.start();
+    solver.solve();
+    timeGeno.stop();
+
+    clog << "f = " << solver.f() << " computed in time: " << timeGeno.secs() << " secs" << endl;
+
+    warm_x = x = Vector::ConstMapType(solver.x(), nr_cols);
+    y = Vector::ConstMapType(solver.y(), nr_rows);
+}
+
 bool kek;
 
 void LP::SolveLP()
 {
-    if (kek)
-    {
-        vector<pair<const MPVariable*, double> > hint;
-        for (int i : t1.nodes())
-            for (int j : t2.nodes())
-                if (K[i][j] != -1)
-                    hint.emplace_back(variables[K[i][j]], x(K[i][j]));
-        solver.SetHint(hint);
-    }
-    kek = true;
+    SolveGeno();
+    return;
+    // if (kek)
+    // {
+    //     vector<pair<const MPVariable*, double> > hint;
+    //     for (int i : t1.nodes())
+    //         for (int j : t2.nodes())
+    //             if (K[i][j] != -1)
+    //                 hint.emplace_back(variables[K[i][j]], x(K[i][j]));
+    //     solver.SetHint(hint);
+    // }
+    // kek = true;
     const MPSolver::ResultStatus result_status = solver.Solve();
     if (result_status != MPSolver::OPTIMAL) {
         LOG(FATAL) << "The problem does not have an optimal solution!";

@@ -33,6 +33,7 @@ private:
     template<class T> int Add();
     template<int N> int Add();
 
+    void SolveGeno();
     void SolveLP();
     void SolveILP();
     void MatchingConstraints();
